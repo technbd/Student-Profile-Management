@@ -278,6 +278,31 @@ define('DB_PORT', 3306);
 
 ### 6. Configure Nginx:
 
+Unlike Apache, Nginx cannot execute PHP by itself.
+- `php-fpm.conf` : Defines backend and PHP engine (PHP-FPM location)
+- `php.conf`: Defines rule (when to send to PHP)
+- Simple flow: 
+```
+Browser → Nginx → PHP-FPM → Nginx → Browser
+```
+
+
+_Step-by-step:_
+```
+1. User opens: http://server_ip/info.php
+
+2. Nginx sees: .php file → match location ~ \.php$
+
+3. Nginx sends request to: fastcgi_pass php-fpm
+
+4. php-fpm points to: /run/php-fpm/www.sock
+
+5. PHP-FPM executes: info.php
+
+6. Output goes back to browser 
+```
+
+
 _Edit/Configure file on `/etc/nginx/nginx.conf`:_
 ```conf 
 
@@ -343,6 +368,10 @@ http {
 
 
 _Check file `/etc/nginx/conf.d/php-fpm.conf`:_
+- This defines a backend (PHP engine).
+- `upstream php-fpm` → just a name/alias
+- `server unix:/run/php-fpm/www.sock` → where PHP is actually running
+
 ```conf 
 ## cat /etc/nginx/conf.d/php-fpm.conf
 
@@ -356,6 +385,8 @@ upstream php-fpm {
 
 
 _Check file `/etc/nginx/default.d/php.conf`:_
+- “Whenever a `.php` file is requested → send it to PHP-FPM (`fastcgi_pass php-fpm;`)”
+
 ```conf 
 ## cat /etc/nginx/default.d/php.conf
 
