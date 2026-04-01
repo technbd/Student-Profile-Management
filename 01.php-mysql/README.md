@@ -2,6 +2,8 @@
 
 Now I'll create a complete PHP + MySQL student management system with login and profile pages with picture upload.
 
+Here’s a clean step-by-step guide to install Mysql, PHP 7.4 on Rocky Linux 8: 
+
 
 ### Directory Structure:
 
@@ -340,7 +342,78 @@ http {
 ```
 
 
+_Check file `/etc/nginx/conf.d/php-fpm.conf`:_
+```conf 
+## cat /etc/nginx/conf.d/php-fpm.conf
+
+# PHP-FPM FastCGI server
+# network or unix domain socket configuration
+
+upstream php-fpm {
+        server unix:/run/php-fpm/www.sock;
+}
+```
+
+
+_Check file `/etc/nginx/default.d/php.conf`:_
+```conf 
+## cat /etc/nginx/default.d/php.conf
+
+# pass the PHP scripts to FastCGI server
+#
+# See conf.d/php-fpm.conf for socket configuration
+#
+index index.php index.html index.htm;
+
+location ~ \.php$ {
+    try_files $uri =404;
+    fastcgi_intercept_errors on;
+    fastcgi_index  index.php;
+    include        fastcgi_params;
+    fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+    fastcgi_pass   php-fpm;
+}
+```
+
+
+_Verify socket file exists:_
 ```bash
+
+ls -l /run/php-fpm/www.sock
+```
+
+
+
+_Check default pool:_
+```bash
+grep -E "^user|^group" /etc/php-fpm.d/www.conf
+
+grep -E "listen|user|group" /etc/php-fpm.d/www.conf | grep -v "^;"
+```
+
+
+_Check PHP-FPM pool config:_
+```conf
+## vim /etc/php-fpm.d/www.conf
+
+user = apache
+group = apache
+
+listen = /run/php-fpm/www.sock
+
+;listen.owner = nobody
+;listen.group = nobody
+;listen.mode = 0660
+
+listen.acl_users = apache,nginx
+listen.allowed_clients = 127.0.0.1
+```
+
+
+
+```bash
+systemctl restart php-fpm
+
 systemctl restart nginx
 ```
 
